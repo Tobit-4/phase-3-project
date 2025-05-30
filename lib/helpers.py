@@ -41,8 +41,6 @@ def delete_farmer():
         print(f"Error: {e}")
         session.rollback()
 
-# -------------------- FIELDS --------------------
-
 # List all fields
 def list_fields():
     fields = session.query(Field).all()
