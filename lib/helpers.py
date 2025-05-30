@@ -92,7 +92,6 @@ def delete_field():
         print(f"Error: {e}")
         session.rollback()
 
-# -------------------- CROPS --------------------
 
 # List all crops
 def list_crops():

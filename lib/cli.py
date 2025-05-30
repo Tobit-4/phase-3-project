@@ -1,5 +1,3 @@
-# lib/cli.py
-
 from helpers import (
     list_farmers, add_farmer, delete_farmer,
     list_fields, add_field, delete_field,
