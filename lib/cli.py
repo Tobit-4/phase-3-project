@@ -1,91 +1,146 @@
-from helpers import (
-    list_farmers, add_farmer, delete_farmer,
-    list_fields, add_field, delete_field,
-    list_crops, add_crop,
-)
-import sys
+from lib.db.models import session, Farmer, Field, Crop
+from sqlalchemy.exc import SQLAlchemyError
+import re
 
-def main_menu():
-    print("\n🌱 Welcome to the Farm Management CLI 🌱")
-    print("1. Manage Farmers")
-    print("2. Manage Fields")
-    print("3. Manage Crops")
-    print("4. Exit")
 
-def farmer_menu():
-    print("\n👩‍🌾 Farmer Management")
-    print("1. View all farmers")
-    print("2. Add a new farmer")
-    print("3. Delete a farmer")
-    print("4. Go back")
+def is_valid_email(email):
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    return re.match(pattern, email) is not None
 
-def field_menu():
-    print("\n🌾 Field Management")
-    print("1. View all fields")
-    print("2. Add a new field")
-    print("3. Delete a field")
-    print("4. Go back")
+def create_farmer():
+    try:
+        name = input("Enter farmer name: ")
+        email = input("Enter farmer email: ")
 
-def crop_menu():
-    print("\n🌽 Crop Management")
-    print("1. View all crops")
-    print("2. Add a new crop")
-    print("3. Go back")
+        if not name or not email:
+            print("❌ Name and email are required.")
+            return
 
-def run():
+        if not is_valid_email(email):
+            print("❌ Invalid email format. Please use something like 'example@domain.com'.")
+            return
+
+        farmer = Farmer(name=name, email=email)
+        session.add(farmer)
+        session.commit()
+        print(f"✅ Farmer '{name}' created successfully.")
+    except SQLAlchemyError as e:
+        session.rollback()
+        print("❌ Database error:", e)
+
+
+def create_field():
+    try:
+        name = input("Enter field name: ")
+        location = input("Enter field location: ")
+        size_in_acres = int(input("Enter field size (in acres): "))
+        farmer_id = int(input("Enter farmer ID: "))
+
+        farmer = session.get(Farmer, farmer_id)
+        if not farmer:
+            print("❌ Farmer not found.")
+            return
+
+        field = Field(name=name, location=location, size_in_acres=size_in_acres, farmer=farmer)
+        session.add(field)
+        session.commit()
+        print(f"✅ Field '{name}' created for farmer '{farmer.name}'.")
+    except ValueError:
+        print("❌ Size and Farmer ID must be numbers.")
+    except SQLAlchemyError as e:
+        session.rollback()
+        print("❌ Database error:", e)
+
+def create_crop():
+    try:
+        name = input("Enter crop name: ")
+        crop_type = input("Enter crop type: ")
+        quantity = int(input("Enter quantity: "))
+        planting_season = input("Enter planting season: ")
+        harvest_season = input("Enter harvest season: ")
+        yield_per_acre = int(input("Enter yield per acre: "))
+        field_id = int(input("Enter field ID: "))
+
+        field = session.get(Field, field_id)
+        if not field:
+            print("❌ Field not found.")
+            return
+
+        crop = Crop(
+            name=name,
+            crop_type=crop_type,
+            quantity=quantity,
+            planting_season=planting_season,
+            harvest_season=harvest_season,
+            yield_per_acre=yield_per_acre,
+            field=field
+        )
+        session.add(crop)
+        session.commit()
+        print(f"✅ Crop '{name}' added to field '{field.name}'.")
+    except ValueError:
+        print("❌ Quantity, yield, and field ID must be numbers.")
+    except SQLAlchemyError as e:
+        session.rollback()
+        print("❌ Database error:", e)
+
+def view_farmers():
+    farmers = session.query(Farmer).all()
+    if not farmers:
+        print("ℹ️ No farmers found.")
+        return
+    for farmer in farmers:
+        print(farmer)
+
+def view_fields():
+    fields = session.query(Field).all()
+    if not fields:
+        print("ℹ️ No fields found.")
+        return
+    for field in fields:
+        print(field)
+
+def view_crops():
+    crops = session.query(Crop).all()
+    if not crops:
+        print("ℹ️ No crops found.")
+        return
+    for crop in crops:
+        print(crop)
+
+def main():
     while True:
-        main_menu()
-        choice = input("Select an option: ").strip()
+        print("\n🌾 Farm Management CLI 🌾")
+        print("1. Create Farmer")
+        print("2. Create Field")
+        print("3. Create Crop")
+        print("4. View Farmers")
+        print("5. View Fields")
+        print("6. View Crops")
+        print("7. Exit")
 
-        if choice == "1":
-            while True:
-                farmer_menu()
-                sub = input("Choose: ").strip()
-                if sub == "1":
-                    list_farmers()
-                elif sub == "2":
-                    add_farmer()
-                elif sub == "3":
-                    delete_farmer()
-                elif sub == "4":
-                    break
-                else:
-                    print("Invalid choice. Try again.")
-
-        elif choice == "2":
-            while True:
-                field_menu()
-                sub = input("Choose: ").strip()
-                if sub == "1":
-                    list_fields()
-                elif sub == "2":
-                    add_field()
-                elif sub == "3":
-                    delete_field()
-                elif sub == "4":
-                    break
-                else:
-                    print("Invalid choice. Try again.")
-
-        elif choice == "3":
-            while True:
-                crop_menu()
-                sub = input("Choose: ").strip()
-                if sub == "1":
-                    list_crops()
-                elif sub == "2":
-                    add_crop()
-                elif sub == "3":
-                    break
-                else:
-                    print("Invalid choice. Try again.")
-
-        elif choice == "4":
-            print("👋 Exiting the farm manager. Goodbye!")
-            sys.exit()
-
-        else:
-            print("Invalid choice. Try again.")
+        try:
+            choice = input("Select an option: ").strip()
+            if choice == "1":
+                create_farmer()
+            elif choice == "2":
+                create_field()
+            elif choice == "3":
+                create_crop()
+            elif choice == "4":
+                view_farmers()
+            elif choice == "5":
+                view_fields()
+            elif choice == "6":
+                view_crops()
+            elif choice == "7":
+                print("👋 Exiting the farm management CLI. Goodbye!")
+                break
+            else:
+                print("❌ Invalid option. Please choose 1–7.")
+        except KeyboardInterrupt:
+            print("\n👋 Exiting CLI. Goodbye!")
+            break
 
 if __name__ == "__main__":
-    run()
+    main()
