@@ -1,7 +1,5 @@
-# seed.py
 from models import session, Farmer, Field, Crop
 
-# Clear existing data
 session.query(Field).delete()
 session.query(Crop).delete()
 session.query(Farmer).delete()

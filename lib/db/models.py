@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, create_engine
 from sqlalchemy.orm import relationship, declarative_base, sessionmaker
 
 engine = create_engine('sqlite:///farm.db')
@@ -6,6 +6,12 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 Base = declarative_base()
+
+field_crop = Table(
+    'field_crop', Base.metadata,
+    Column('field_id', ForeignKey('fields.id'), primary_key=True),
+    Column('crop_id', ForeignKey('crops.id'), primary_key=True)
+)
 
 class Farmer(Base):
     __tablename__ = 'farmers'
